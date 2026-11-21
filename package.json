@@ -198,6 +198,12 @@
           "default": "",
           "scope": "application",
           "markdownDescription": "Clé de licence **Cockpit Pro**. Sans effet dans la version gratuite : aucune validation réseau n'est effectuée pour l'instant et la clé ne quitte jamais votre machine."
+        },
+        "cockpit.checkUpdates": {
+          "type": "boolean",
+          "default": true,
+          "scope": "application",
+          "markdownDescription": "Vérifie sur la page GitHub Pages du projet si une nouvelle version existe. **Actif uniquement pour une installation depuis un fichier `.vsix`** : une extension installée depuis le VS Marketplace ou Open VSX est mise à jour par VS Code. Aucune donnée personnelle n'est envoyée. Peut aussi être coupé avec la variable d'environnement `COCKPIT_UPDATE_CHECK=off`."
         }
       }
     }

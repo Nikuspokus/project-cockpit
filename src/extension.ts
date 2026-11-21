@@ -9,6 +9,7 @@ import { ProHooks } from './pro/hooks';
 import { StubLicenseService } from './pro/license';
 import { CommandRunner } from './runner/command-runner';
 import { scanFolders } from './scan/scan-folders';
+import { checkForUpdate } from './update/check';
 import { CockpitTreeProvider } from './views/cockpit-tree';
 import { CommandsSection } from './views/commands-section';
 import { EnvSection, type EnvDirInput } from './views/env-section';
@@ -181,6 +182,7 @@ export function activate(context: vscode.ExtensionContext): CockpitApi {
 
   if (view.visible) ports.start();
   void rescan();
+  void checkForUpdate(context); // sans await : ne retarde jamais l'activation
 
   // API publique : utilisée par l'extension Pro (dépôt privé), voir src/api.ts.
   return {

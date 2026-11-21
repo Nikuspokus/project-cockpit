@@ -1,0 +1,64 @@
+name: Release
+
+# Déclenché par un tag vX.Y.Z (doit être égal à « v » + version de package.json).
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write # créer la release GitHub
+  pages: write # déployer GitHub Pages
+  id-token: write # requis par actions/deploy-pages
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    env:
+      # Secrets du dépôt (Settings → Secrets and variables → Actions). Voir docs/PUBLISHING.md.
+      # Exposés au niveau du job pour pouvoir tester leur présence dans les « if » des étapes.
+      VSCE_PAT: ${{ secrets.VSCE_PAT }}
+      OVSX_PAT: ${{ secrets.OVSX_PAT }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run package
+      - run: node scripts/make-site.mjs
+        env:
+          TAG: ${{ github.ref_name }}
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: '*.vsix'
+          generate_release_notes: true
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deploy
+        uses: actions/deploy-pages@v4
+
+      # Publication sur les stores, en dernier : la release et la page sont déjà en ligne si un store échoue.
+      - name: Publier sur Open VSX
+        if: ${{ env.OVSX_PAT != '' }}
+        run: npx ovsx publish "project-cockpit-${GITHUB_REF_NAME#v}.vsix" --pat "$OVSX_PAT"
+      - name: Publier sur le VS Marketplace
+        if: ${{ env.VSCE_PAT != '' }}
+        run: npx vsce publish --packagePath "project-cockpit-${GITHUB_REF_NAME#v}.vsix" --pat "$VSCE_PAT"
+      - name: Stores non configurés
+        if: ${{ env.OVSX_PAT == '' || env.VSCE_PAT == '' }}
+        run: |
+          echo "::notice::Publication sur un store ignorée : secret OVSX_PAT ou VSCE_PAT absent (voir docs/PUBLISHING.md)."
