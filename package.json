@@ -1,0 +1,61 @@
+{
+  "name": "project-cockpit",
+  "displayName": "Project Cockpit",
+  "description": "Un seul panneau, zéro configuration : lancez les commandes du projet, gérez les ports occupés et vérifiez votre .env (JS/TS et Java).",
+  "version": "0.1.0",
+  "publisher": "nikuspokus",
+  "license": "SEE LICENSE IN LICENSE",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "scripts",
+    "ports",
+    "env",
+    "npm",
+    "maven",
+    "gradle",
+    "docker-compose",
+    "monorepo"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "workspaceContains:**/package.json",
+    "workspaceContains:**/pom.xml",
+    "workspaceContains:**/build.gradle",
+    "workspaceContains:**/build.gradle.kts",
+    "workspaceContains:**/Makefile",
+    "workspaceContains:**/docker-compose.yml",
+    "workspaceContains:**/docker-compose.yaml",
+    "workspaceContains:**/compose.yml",
+    "workspaceContains:**/compose.yaml",
+    "workspaceContains:**/.env"
+  ],
+  "homepage": "https://nikuspokus.github.io/project-cockpit",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Nikuspokus/project-cockpit.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Nikuspokus/project-cockpit/issues"
+  },
+  "scripts": {
+    "build": "node esbuild.js",
+    "watch": "node esbuild.js --watch",
+    "typecheck": "tsc -p . --noEmit",
+    "test": "vitest run",
+    "package": "npm run build && vsce package --no-dependencies"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "@types/vscode": "~1.90.0",
+    "@vscode/vsce": "^4.1.1",
+    "esbuild": "^0.28.2",
+    "ovsx": "^1.4.0",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.1"
+  }
+}
