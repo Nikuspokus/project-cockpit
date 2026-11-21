@@ -1,0 +1,4 @@
+"svchost.exe","1024","Services","0","12 000 K"
+"node.exe","8888","Console","1","80 000 K"
+"postgres.exe","7777","Services","0","20 000 K"
+"java.exe","9999","Console","1","300 000 K"

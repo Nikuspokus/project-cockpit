@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import type { CommandRunner } from '../runner/command-runner';
+import { commandKey, type CommandRunner } from '../runner/command-runner';
 import type { CommandNode, ProjectNode, ScannedProject, Section, TreeNode } from './nodes';
 
 /** Groupe « Commandes » : projets détectés (monorepo) et leurs commandes. */
@@ -11,6 +11,10 @@ export class CommandsSection implements Section {
 
   setProjects(projects: ScannedProject[]): void {
     this.projects = projects;
+  }
+
+  getProjects(): readonly ScannedProject[] {
+    return this.projects;
   }
 
   getChildren(node: TreeNode): TreeNode[] {
@@ -32,6 +36,7 @@ export class CommandsSection implements Section {
   getTreeItem(node: TreeNode): vscode.TreeItem {
     if (node.kind === 'message') {
       const item = new vscode.TreeItem(node.label);
+      item.id = `msg:commands:${node.label}`;
       item.description = node.description;
       if (node.icon) item.iconPath = new vscode.ThemeIcon(node.icon);
       return item;
@@ -50,6 +55,7 @@ export class CommandsSection implements Section {
     const multiRoot = (vscode.workspace.workspaceFolders?.length ?? 0) > 1;
     const label = project.dir || folder.name;
     const item = new vscode.TreeItem(label, vscode.TreeItemCollapsibleState.Expanded);
+    item.id = `project:${folder.uri.toString()}::${project.dir}`;
     item.description = multiRoot && project.dir ? folder.name : undefined;
     item.iconPath = new vscode.ThemeIcon('folder');
     item.contextValue = 'cockpit.project';
@@ -59,6 +65,7 @@ export class CommandsSection implements Section {
   private commandItem({ folder, command }: CommandNode): vscode.TreeItem {
     const running = this.runner.isRunning(folder, command);
     const item = new vscode.TreeItem(command.label);
+    item.id = `command:${commandKey(folder, command)}`;
     item.description = running ? 'en cours' : command.detail ?? command.source;
     item.tooltip = running
       ? `${command.command}\nEn cours — utilisez Relancer ou Stop`

@@ -1,0 +1,6 @@
+p1234
+fcwd
+n/home/nicolas/work/app
+p5678
+fcwd
+n/var/lib/postgresql

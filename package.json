@@ -87,19 +87,49 @@
         "title": "Stop",
         "category": "Cockpit",
         "icon": "$(debug-stop)"
+      },
+      {
+        "command": "cockpit.freePort",
+        "title": "Libérer le port",
+        "category": "Cockpit",
+        "icon": "$(debug-disconnect)"
+      },
+      {
+        "command": "cockpit.togglePortsScope",
+        "title": "Afficher ou masquer les ports des autres utilisateurs",
+        "category": "Cockpit",
+        "icon": "$(account)"
       }
     ],
     "menus": {
       "commandPalette": [
-        { "command": "cockpit.runCommand", "when": "false" },
-        { "command": "cockpit.rerunCommand", "when": "false" },
-        { "command": "cockpit.stopCommand", "when": "false" }
+        {
+          "command": "cockpit.runCommand",
+          "when": "false"
+        },
+        {
+          "command": "cockpit.rerunCommand",
+          "when": "false"
+        },
+        {
+          "command": "cockpit.stopCommand",
+          "when": "false"
+        },
+        {
+          "command": "cockpit.freePort",
+          "when": "false"
+        }
       ],
       "view/title": [
         {
           "command": "cockpit.refresh",
           "when": "view == cockpit.view",
-          "group": "navigation"
+          "group": "navigation@1"
+        },
+        {
+          "command": "cockpit.togglePortsScope",
+          "when": "view == cockpit.view",
+          "group": "navigation@2"
         }
       ],
       "view/item/context": [
@@ -117,6 +147,11 @@
           "command": "cockpit.stopCommand",
           "when": "view == cockpit.view && viewItem == cockpit.command.running",
           "group": "inline@2"
+        },
+        {
+          "command": "cockpit.freePort",
+          "when": "view == cockpit.view && viewItem == cockpit.port.killable",
+          "group": "inline@1"
         }
       ]
     }

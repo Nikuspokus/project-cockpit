@@ -1,0 +1,4 @@
+
+  Proto  Adresse locale         Adresse distante       Etat           PID
+  TCP    [::]:3000              [::]:0                 LISTENING      8888
+  TCP    [::1]:8080             [::]:0                 LISTENING      9999

@@ -1,4 +1,5 @@
 import type * as vscode from 'vscode';
+import type { ListeningPort } from '../platform/types';
 import type { CockpitCommand, ProjectEntry } from '../scan/workspace';
 
 export type SectionId = 'commands' | 'ports' | 'env';
@@ -35,7 +36,24 @@ export interface CommandNode {
   command: CockpitCommand;
 }
 
-export type TreeNode = GroupNode | MessageNode | ProjectNode | CommandNode;
+export interface PortNode {
+  kind: 'port';
+  section: 'ports';
+  port: ListeningPort;
+  /** Déclaré dans un .env du projet (PORT=…). */
+  declared: boolean;
+  /** Appartient à l'utilisateur courant : le bouton « Libérer » est proposé. */
+  killable: boolean;
+}
+
+export interface PortGroupNode {
+  kind: 'portGroup';
+  section: 'ports';
+  id: 'others' | 'foreign';
+  ports: ListeningPort[];
+}
+
+export type TreeNode = GroupNode | MessageNode | ProjectNode | CommandNode | PortNode | PortGroupNode;
 
 /** Une section de l'arbre (Commandes, Ports, Environnement) gère ses propres nœuds. */
 export interface Section {

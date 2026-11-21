@@ -1,0 +1,9 @@
+
+Connexions actives
+
+  Proto  Adresse locale         Adresse distante       Etat           PID
+  TCP    0.0.0.0:135            0.0.0.0:0              ABHÖREN        1024
+  TCP    0.0.0.0:3000           0.0.0.0:0              LISTENING      8888
+  TCP    127.0.0.1:5432         0.0.0.0:0              À L’ÉCOUTE     7777
+  TCP    127.0.0.1:3000         127.0.0.1:52000        ESTABLISHED    8888
+  TCP    192.168.1.10:49800     52.1.2.3:443           ESTABLISHED    4242
