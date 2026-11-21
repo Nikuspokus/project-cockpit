@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import type { ProHooks } from '../pro/hooks';
 import type { GroupNode, Section, SectionId, TreeNode } from './nodes';
 
 const GROUPS: ReadonlyArray<{ id: SectionId; label: string; icon: string }> = [
@@ -18,7 +19,10 @@ export class CockpitTreeProvider implements vscode.TreeDataProvider<TreeNode>, v
     GROUPS.map((g) => [g.id, { kind: 'group', section: g.id } as GroupNode]),
   );
 
-  constructor(sections: Section[]) {
+  constructor(
+    sections: Section[],
+    private readonly pro: ProHooks,
+  ) {
     for (const section of sections) this.sections.set(section.id, section);
   }
 
@@ -32,12 +36,16 @@ export class CockpitTreeProvider implements vscode.TreeDataProvider<TreeNode>, v
     this.emitter.fire(this.groupNodes.get(id));
   }
 
-  getChildren(node?: TreeNode): Thenable<TreeNode[]> | TreeNode[] {
+  async getChildren(node?: TreeNode): Promise<TreeNode[]> {
     if (!node) return GROUPS.map((g) => this.groupNodes.get(g.id)!);
-    return this.sections.get(node.section)?.getChildren(node) ?? [];
+    if (node.kind === 'proHook' || node.kind === 'proItem') return this.pro.getChildren(node);
+    const own = await (this.sections.get(node.section)?.getChildren(node) ?? []);
+    // Les emplacements Pro (verrouillés ou remplis) sont ajoutés en fin de chaque groupe.
+    return node.kind === 'group' ? [...own, ...(await this.pro.nodesFor(node.section))] : own;
   }
 
   getTreeItem(node: TreeNode): vscode.TreeItem {
+    if (node.kind === 'proHook' || node.kind === 'proItem') return this.pro.getTreeItem(node);
     if (node.kind === 'group') {
       const group = GROUPS.find((g) => g.id === node.section)!;
       const item = new vscode.TreeItem(group.label, vscode.TreeItemCollapsibleState.Expanded);

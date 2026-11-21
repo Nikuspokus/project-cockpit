@@ -1,6 +1,7 @@
 import type * as vscode from 'vscode';
 import type { EnvReport } from '../env/analyze';
 import type { ListeningPort } from '../platform/types';
+import type { HookState, ProFeatureId, ProFeatureItem } from '../pro/features';
 import type { CockpitCommand, ProjectEntry } from '../scan/workspace';
 
 export type SectionId = 'commands' | 'ports' | 'env';
@@ -83,6 +84,21 @@ export interface EnvActionNode {
   report: EnvReport;
 }
 
+/** Emplacement Pro : verrouillé (cadenas + lien) ou rempli par l'extension Pro. */
+export interface ProHookNode {
+  kind: 'proHook';
+  section: SectionId;
+  hookId: ProFeatureId;
+  state: HookState;
+}
+
+export interface ProItemNode {
+  kind: 'proItem';
+  section: SectionId;
+  hookId: ProFeatureId;
+  item: ProFeatureItem;
+}
+
 export type TreeNode =
   | GroupNode
   | MessageNode
@@ -93,7 +109,9 @@ export type TreeNode =
   | EnvDirNode
   | EnvGroupNode
   | EnvVarNode
-  | EnvActionNode;
+  | EnvActionNode
+  | ProHookNode
+  | ProItemNode;
 
 /** Une section de l'arbre (Commandes, Ports, Environnement) gère ses propres nœuds. */
 export interface Section {

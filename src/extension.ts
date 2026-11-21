@@ -1,9 +1,12 @@
 import * as path from 'node:path';
 import * as vscode from 'vscode';
+import type { CockpitApi, DetectedProject } from './api';
 import { createEnvFromTemplate } from './env/analyze';
 import { getPlatform } from './platform';
 import { freePort } from './ports/free-port';
 import { PortsService, type PortsInputs } from './ports/service';
+import { ProHooks } from './pro/hooks';
+import { StubLicenseService } from './pro/license';
 import { CommandRunner } from './runner/command-runner';
 import { scanFolders } from './scan/scan-folders';
 import { CockpitTreeProvider } from './views/cockpit-tree';
@@ -27,7 +30,7 @@ const isPortNode = (arg: unknown): arg is PortNode => hasKind(arg, 'port');
 const isEnvActionNode = (arg: unknown): arg is EnvActionNode => hasKind(arg, 'envAction');
 const isEnvDirNode = (arg: unknown): arg is EnvDirNode => hasKind(arg, 'envDir');
 
-export function activate(context: vscode.ExtensionContext): void {
+export function activate(context: vscode.ExtensionContext): CockpitApi {
   const platform = getPlatform();
   const runner = new CommandRunner();
   const commands = new CommandsSection(runner);
@@ -57,7 +60,10 @@ export function activate(context: vscode.ExtensionContext): void {
   const ports = new PortsService(platform, portsInputs);
   const portsSection = new PortsSection(ports);
   const envSection = new EnvSection(projectDirs, context.workspaceState);
-  const tree = new CockpitTreeProvider([commands, portsSection, envSection]);
+  const license = new StubLicenseService(() => vscode.workspace.getConfiguration('cockpit').get<string>('licenseKey'));
+  const pro = new ProHooks(license);
+  const tree = new CockpitTreeProvider([commands, portsSection, envSection], pro);
+  const projectsEmitter = new vscode.EventEmitter<void>();
   const view = vscode.window.createTreeView('cockpit.view', { treeDataProvider: tree, showCollapseAll: true });
 
   const refreshEnv = async (): Promise<void> => {
@@ -67,6 +73,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
   const rescan = async (): Promise<void> => {
     commands.setProjects(await scanFolders(vscode.workspace.workspaceFolders ?? []));
+    projectsEmitter.fire();
     tree.refreshSection('commands');
     await refreshEnv();
     if (ports.running) void ports.refresh();
@@ -94,6 +101,8 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
     runner,
     ports,
+    pro,
+    projectsEmitter,
     tree,
     view,
     watcher,
@@ -103,6 +112,10 @@ export function activate(context: vscode.ExtensionContext): void {
     envWatcher.onDidChange(scheduleEnvRefresh),
     envWatcher.onDidDelete(scheduleEnvRefresh),
     runner.onDidChange(() => tree.refreshSection('commands')),
+    pro.onDidChange(() => tree.refresh()),
+    vscode.workspace.onDidChangeConfiguration((e) => {
+      if (e.affectsConfiguration('cockpit.licenseKey')) tree.refresh();
+    }),
     ports.onDidChange(() => tree.refreshSection('ports')),
     // Les ports ne sont interrogés que lorsque la vue est visible.
     view.onDidChangeVisibility((e) => (e.visible ? ports.start() : ports.stop())),
@@ -156,6 +169,10 @@ export function activate(context: vscode.ExtensionContext): void {
       await envSection.setTarget(dir, picked.label);
       await refreshEnv();
     }),
+    vscode.commands.registerCommand('cockpit.showPro', async () => {
+      const homepage = String(context.extension.packageJSON.homepage ?? '');
+      if (homepage.startsWith('https://')) await vscode.env.openExternal(vscode.Uri.parse(`${homepage}#pro`));
+    }),
     vscode.commands.registerCommand('cockpit.togglePortsScope', () => {
       portsSection.toggleForeign();
       tree.refreshSection('ports');
@@ -164,6 +181,20 @@ export function activate(context: vscode.ExtensionContext): void {
 
   if (view.visible) ports.start();
   void rescan();
+
+  // API publique : utilisée par l'extension Pro (dépôt privé), voir src/api.ts.
+  return {
+    apiVersion: 1,
+    license,
+    onDidChangeProjects: projectsEmitter.event,
+    registerProFeature: (feature) => pro.registerFeature(feature),
+    getProjects: (): DetectedProject[] =>
+      commands.getProjects().map(({ folder, project }) => ({
+        folderUri: folder.uri.toString(),
+        dir: project.dir,
+        commands: project.commands.map(({ id, label, command, source }) => ({ id, label, command, source })),
+      })),
+  };
 }
 
 export function deactivate(): void {}

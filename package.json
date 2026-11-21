@@ -111,6 +111,12 @@
         "title": "Choisir le fichier .env à comparer",
         "category": "Cockpit",
         "icon": "$(list-selection)"
+      },
+      {
+        "command": "cockpit.showPro",
+        "title": "En savoir plus sur Cockpit Pro",
+        "category": "Cockpit",
+        "icon": "$(lock)"
       }
     ],
     "menus": {
@@ -137,6 +143,10 @@
         },
         {
           "command": "cockpit.pickEnvTarget",
+          "when": "false"
+        },
+        {
+          "command": "cockpit.showPro",
           "when": "false"
         }
       ],
@@ -179,6 +189,17 @@
           "group": "inline@1"
         }
       ]
+    },
+    "configuration": {
+      "title": "Project Cockpit",
+      "properties": {
+        "cockpit.licenseKey": {
+          "type": "string",
+          "default": "",
+          "scope": "application",
+          "markdownDescription": "Clé de licence **Cockpit Pro**. Sans effet dans la version gratuite : aucune validation réseau n'est effectuée pour l'instant et la clé ne quitte jamais votre machine."
+        }
+      }
     }
   },
   "homepage": "https://nikuspokus.github.io/project-cockpit",
