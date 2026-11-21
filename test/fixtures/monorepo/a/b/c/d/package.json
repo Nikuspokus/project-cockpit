@@ -1,0 +1,4 @@
+{
+  "name": "too-deep",
+  "scripts": { "dev": "echo depth 4" }
+}

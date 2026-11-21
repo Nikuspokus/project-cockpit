@@ -1,0 +1,4 @@
+{
+  "name": "depth-three",
+  "scripts": { "dev": "echo depth 3" }
+}
