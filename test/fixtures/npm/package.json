@@ -1,0 +1,10 @@
+{
+  "name": "demo-npm",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "test:unit": "vitest run",
+    "bad name": "echo nope",
+    "evil;rm": "echo nope"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "demo-pnpm",
+  "packageManager": "pnpm@9.1.0",
+  "scripts": {
+    "dev": "nuxt dev",
+    "build": "nuxt build"
+  }
+}
