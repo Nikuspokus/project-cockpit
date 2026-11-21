@@ -34,6 +34,93 @@
     "workspaceContains:**/compose.yaml",
     "workspaceContains:**/.env"
   ],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "cockpit",
+          "title": "Cockpit",
+          "icon": "media/cockpit.svg"
+        }
+      ]
+    },
+    "views": {
+      "cockpit": [
+        {
+          "id": "cockpit.view",
+          "name": "Cockpit"
+        }
+      ]
+    },
+    "taskDefinitions": [
+      {
+        "type": "cockpit",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Identifiant interne de la commande Cockpit."
+          }
+        }
+      }
+    ],
+    "commands": [
+      {
+        "command": "cockpit.refresh",
+        "title": "Actualiser",
+        "category": "Cockpit",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "cockpit.runCommand",
+        "title": "Lancer",
+        "category": "Cockpit",
+        "icon": "$(play)"
+      },
+      {
+        "command": "cockpit.rerunCommand",
+        "title": "Relancer",
+        "category": "Cockpit",
+        "icon": "$(debug-restart)"
+      },
+      {
+        "command": "cockpit.stopCommand",
+        "title": "Stop",
+        "category": "Cockpit",
+        "icon": "$(debug-stop)"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        { "command": "cockpit.runCommand", "when": "false" },
+        { "command": "cockpit.rerunCommand", "when": "false" },
+        { "command": "cockpit.stopCommand", "when": "false" }
+      ],
+      "view/title": [
+        {
+          "command": "cockpit.refresh",
+          "when": "view == cockpit.view",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "cockpit.runCommand",
+          "when": "view == cockpit.view && viewItem == cockpit.command.idle",
+          "group": "inline@1"
+        },
+        {
+          "command": "cockpit.rerunCommand",
+          "when": "view == cockpit.view && viewItem == cockpit.command.running",
+          "group": "inline@1"
+        },
+        {
+          "command": "cockpit.stopCommand",
+          "when": "view == cockpit.view && viewItem == cockpit.command.running",
+          "group": "inline@2"
+        }
+      ]
+    }
+  },
   "homepage": "https://nikuspokus.github.io/project-cockpit",
   "repository": {
     "type": "git",
