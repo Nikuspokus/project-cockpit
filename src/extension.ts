@@ -1,5 +1,6 @@
 import * as path from 'node:path';
 import * as vscode from 'vscode';
+import { createEnvFromTemplate } from './env/analyze';
 import { getPlatform } from './platform';
 import { freePort } from './ports/free-port';
 import { PortsService, type PortsInputs } from './ports/service';
@@ -7,8 +8,8 @@ import { CommandRunner } from './runner/command-runner';
 import { scanFolders } from './scan/scan-folders';
 import { CockpitTreeProvider } from './views/cockpit-tree';
 import { CommandsSection } from './views/commands-section';
-import type { CommandNode, PortNode } from './views/nodes';
-import { PlaceholderSection } from './views/placeholder-section';
+import { EnvSection, type EnvDirInput } from './views/env-section';
+import type { CommandNode, EnvActionNode, EnvDirNode, PortNode } from './views/nodes';
 import { PortsSection } from './views/ports-section';
 
 // Fichiers dont la modification change ce que détecte le Cockpit.
@@ -23,32 +24,51 @@ const hasKind = (arg: unknown, kind: string): boolean =>
   typeof arg === 'object' && arg !== null && (arg as { kind?: string }).kind === kind;
 const isCommandNode = (arg: unknown): arg is CommandNode => hasKind(arg, 'command');
 const isPortNode = (arg: unknown): arg is PortNode => hasKind(arg, 'port');
+const isEnvActionNode = (arg: unknown): arg is EnvActionNode => hasKind(arg, 'envAction');
+const isEnvDirNode = (arg: unknown): arg is EnvDirNode => hasKind(arg, 'envDir');
 
 export function activate(context: vscode.ExtensionContext): void {
   const platform = getPlatform();
   const runner = new CommandRunner();
   const commands = new CommandsSection(runner);
 
-  // Dossiers du workspace et dossiers de projets (pour lire leurs .env et repérer les processus du projet).
-  const portsInputs = (): PortsInputs => {
-    const workspaceDirs = (vscode.workspace.workspaceFolders ?? [])
-      .filter((f) => f.uri.scheme === 'file')
-      .map((f) => f.uri.fsPath);
-    const envDirs = new Set(workspaceDirs);
-    for (const { folder, project } of commands.getProjects()) {
-      envDirs.add(project.dir ? path.join(folder.uri.fsPath, ...project.dir.split('/')) : folder.uri.fsPath);
+  // Racines du workspace + dossiers de projets détectés : c'est là qu'on cherche les .env.
+  const projectDirs = (): EnvDirInput[] => {
+    const multiRoot = (vscode.workspace.workspaceFolders?.length ?? 0) > 1;
+    const dirs = new Map<string, string>();
+    for (const folder of vscode.workspace.workspaceFolders ?? []) {
+      if (folder.uri.scheme === 'file') dirs.set(folder.uri.fsPath, folder.name);
     }
-    return { workspaceDirs, envDirs: [...envDirs] };
+    for (const { folder, project } of commands.getProjects()) {
+      if (!project.dir) continue;
+      const abs = path.join(folder.uri.fsPath, ...project.dir.split('/'));
+      dirs.set(abs, multiRoot ? `${folder.name}/${project.dir}` : project.dir);
+    }
+    return [...dirs].map(([dir, label]) => ({ dir, label }));
   };
+
+  const portsInputs = (): PortsInputs => ({
+    workspaceDirs: (vscode.workspace.workspaceFolders ?? [])
+      .filter((f) => f.uri.scheme === 'file')
+      .map((f) => f.uri.fsPath),
+    envDirs: projectDirs().map((d) => d.dir),
+  });
 
   const ports = new PortsService(platform, portsInputs);
   const portsSection = new PortsSection(ports);
-  const tree = new CockpitTreeProvider([commands, portsSection, new PlaceholderSection('env')]);
+  const envSection = new EnvSection(projectDirs, context.workspaceState);
+  const tree = new CockpitTreeProvider([commands, portsSection, envSection]);
   const view = vscode.window.createTreeView('cockpit.view', { treeDataProvider: tree, showCollapseAll: true });
+
+  const refreshEnv = async (): Promise<void> => {
+    await envSection.refresh();
+    tree.refreshSection('env');
+  };
 
   const rescan = async (): Promise<void> => {
     commands.setProjects(await scanFolders(vscode.workspace.workspaceFolders ?? []));
     tree.refreshSection('commands');
+    await refreshEnv();
     if (ports.running) void ports.refresh();
   };
 
@@ -62,13 +82,26 @@ export function activate(context: vscode.ExtensionContext): void {
 
   const watcher = vscode.workspace.createFileSystemWatcher(`**/{${WATCHED.join(',')}}`);
 
+  // Fichiers .env* : on relit seulement les noms de variables (jamais les valeurs).
+  let envTimer: NodeJS.Timeout | undefined;
+  const scheduleEnvRefresh = (uri: vscode.Uri): void => {
+    if (/[\\/]node_modules[\\/]/.test(uri.fsPath)) return;
+    clearTimeout(envTimer);
+    envTimer = setTimeout(() => void refreshEnv(), 300);
+  };
+  const envWatcher = vscode.workspace.createFileSystemWatcher('**/.env*');
+
   context.subscriptions.push(
     runner,
     ports,
     tree,
     view,
     watcher,
-    { dispose: () => clearTimeout(timer) },
+    envWatcher,
+    { dispose: () => { clearTimeout(timer); clearTimeout(envTimer); } },
+    envWatcher.onDidCreate(scheduleEnvRefresh),
+    envWatcher.onDidChange(scheduleEnvRefresh),
+    envWatcher.onDidDelete(scheduleEnvRefresh),
     runner.onDidChange(() => tree.refreshSection('commands')),
     ports.onDidChange(() => tree.refreshSection('ports')),
     // Les ports ne sont interrogés que lorsque la vue est visible.
@@ -92,6 +125,36 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
     vscode.commands.registerCommand('cockpit.freePort', (node: unknown) => {
       if (isPortNode(node) && node.killable) return freePort(platform, node, () => ports.refresh());
+    }),
+    vscode.commands.registerCommand('cockpit.createEnv', async (node: unknown) => {
+      if (!isEnvActionNode(node) || !node.report.template) return;
+      const { dir, template, target } = node.report;
+      try {
+        await createEnvFromTemplate(dir, template, target);
+      } catch (error) {
+        const exists = (error as NodeJS.ErrnoException).code === 'EEXIST';
+        void vscode.window.showErrorMessage(
+          exists ? `${target} existe déjà : rien n'a été écrasé.` : `Impossible de créer ${target} : ${(error as Error).message}`,
+        );
+        await refreshEnv();
+        return;
+      }
+      await refreshEnv();
+      const choice = await vscode.window.showInformationMessage(`${target} créé depuis ${template}. Renseignez ses valeurs.`, 'Ouvrir');
+      if (choice === 'Ouvrir') {
+        await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(path.join(dir, target)));
+      }
+    }),
+    vscode.commands.registerCommand('cockpit.pickEnvTarget', async (node: unknown) => {
+      if (!isEnvDirNode(node)) return;
+      const { dir, targets, target, template } = node.report;
+      const picked = await vscode.window.showQuickPick(
+        targets.map((label) => ({ label, description: label === target ? 'actuel' : undefined })),
+        { placeHolder: `Fichier à comparer à ${template ?? 'un gabarit'}` },
+      );
+      if (!picked) return;
+      await envSection.setTarget(dir, picked.label);
+      await refreshEnv();
     }),
     vscode.commands.registerCommand('cockpit.togglePortsScope', () => {
       portsSection.toggleForeign();

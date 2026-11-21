@@ -1,4 +1,5 @@
 import type * as vscode from 'vscode';
+import type { EnvReport } from '../env/analyze';
 import type { ListeningPort } from '../platform/types';
 import type { CockpitCommand, ProjectEntry } from '../scan/workspace';
 
@@ -53,7 +54,46 @@ export interface PortGroupNode {
   ports: ListeningPort[];
 }
 
-export type TreeNode = GroupNode | MessageNode | ProjectNode | CommandNode | PortNode | PortGroupNode;
+export interface EnvDirNode {
+  kind: 'envDir';
+  section: 'env';
+  report: EnvReport;
+}
+
+export interface EnvGroupNode {
+  kind: 'envGroup';
+  section: 'env';
+  report: EnvReport;
+  id: 'missing' | 'empty' | 'extra';
+  /** Noms de variables uniquement : jamais de valeurs. */
+  keys: string[];
+}
+
+export interface EnvVarNode {
+  kind: 'envVar';
+  section: 'env';
+  key: string;
+  parentId: string;
+}
+
+/** Action « Créer .env depuis le gabarit » quand le fichier cible n'existe pas. */
+export interface EnvActionNode {
+  kind: 'envAction';
+  section: 'env';
+  report: EnvReport;
+}
+
+export type TreeNode =
+  | GroupNode
+  | MessageNode
+  | ProjectNode
+  | CommandNode
+  | PortNode
+  | PortGroupNode
+  | EnvDirNode
+  | EnvGroupNode
+  | EnvVarNode
+  | EnvActionNode;
 
 /** Une section de l'arbre (Commandes, Ports, Environnement) gère ses propres nœuds. */
 export interface Section {

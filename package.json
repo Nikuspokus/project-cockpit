@@ -99,6 +99,18 @@
         "title": "Afficher ou masquer les ports des autres utilisateurs",
         "category": "Cockpit",
         "icon": "$(account)"
+      },
+      {
+        "command": "cockpit.createEnv",
+        "title": "Créer .env depuis le gabarit",
+        "category": "Cockpit",
+        "icon": "$(add)"
+      },
+      {
+        "command": "cockpit.pickEnvTarget",
+        "title": "Choisir le fichier .env à comparer",
+        "category": "Cockpit",
+        "icon": "$(list-selection)"
       }
     ],
     "menus": {
@@ -117,6 +129,14 @@
         },
         {
           "command": "cockpit.freePort",
+          "when": "false"
+        },
+        {
+          "command": "cockpit.createEnv",
+          "when": "false"
+        },
+        {
+          "command": "cockpit.pickEnvTarget",
           "when": "false"
         }
       ],
@@ -151,6 +171,11 @@
         {
           "command": "cockpit.freePort",
           "when": "view == cockpit.view && viewItem == cockpit.port.killable",
+          "group": "inline@1"
+        },
+        {
+          "command": "cockpit.pickEnvTarget",
+          "when": "view == cockpit.view && viewItem == cockpit.envDir.multi",
           "group": "inline@1"
         }
       ]
