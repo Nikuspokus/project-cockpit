@@ -29,11 +29,27 @@ export function isOwnedByUser(port: ListeningPort, username: string): boolean {
   return port.user === undefined || port.user === username;
 }
 
+const EDITOR_PROCESS = /^(code|cursor|windsurf|vscodium|electron)(\.exe)?( helper.*)?$/i;
+
+/** Processus de l'éditeur lui-même (Code Helper, Cursor Helper…) : jamais « du projet », jamais arrêtables. */
+export function isEditorProcess(processName: string): boolean {
+  return EDITOR_PROCESS.test(processName.trim());
+}
+
+/** Numéros de ports (triés, sans doublon) tenus par un même PID. */
+export function portsOfPid(ports: readonly ListeningPort[], pid: number): number[] {
+  return [...new Set(ports.filter((p) => p.pid === pid).map((p) => p.port))].sort((a, b) => a - b);
+}
+
 export function groupPorts(ports: readonly ListeningPort[], context: PortGroupingContext): PortGroups {
   const groups: PortGroups = { project: [], others: [], foreign: [] };
   for (const port of ports) {
     if (!isOwnedByUser(port, context.username)) {
       groups.foreign.push(port);
+      continue;
+    }
+    if (isEditorProcess(port.processName)) {
+      groups.others.push(port);
       continue;
     }
     const inWorkspace = port.cwd !== undefined && context.workspaceDirs.some((dir) => isInside(port.cwd!, dir));

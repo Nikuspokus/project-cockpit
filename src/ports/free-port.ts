@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import type { PortsPlatform } from '../platform/types';
+import { portsOfPid } from './group';
 import type { PortNode } from '../views/nodes';
 
 const GRACE_MS = 3000;
@@ -30,11 +31,27 @@ export async function freePort(platform: PortsPlatform, node: PortNode, onDone: 
     return;
   }
 
+  // Un processus peut tenir plusieurs ports : on les liste pour que la confirmation soit honnête.
+  let held = [port];
+  try {
+    const ports = portsOfPid(await platform.listListening(), pid);
+    if (ports.length) held = ports;
+  } catch {
+    // liste indisponible : on se contente du port cliqué
+  }
+  const others = held.filter((p) => p !== port);
+  const title =
+    others.length === 0
+      ? `Arrêter « ${name} » (PID ${pid}) qui occupe le port ${port} ?`
+      : `Arrêter « ${name} » (PID ${pid}) qui occupe les ports ${held.join(', ')} ?`;
+
   const confirmed = await vscode.window.showWarningMessage(
-    `Arrêter « ${name} » (PID ${pid}) qui occupe le port ${port} ?`,
+    title,
     {
       modal: true,
-      detail: "Une demande d'arrêt propre est envoyée d'abord. Un travail non enregistré dans ce processus peut être perdu.",
+      detail:
+        (others.length ? `Tout le processus s'arrête : les ports ${others.join(', ')} seront aussi libérés. ` : '') +
+        "Une demande d'arrêt propre est envoyée d'abord. Un travail non enregistré dans ce processus peut être perdu.",
     },
     'Arrêter',
   );

@@ -66,10 +66,10 @@ export class CommandsSection implements Section {
     const running = this.runner.isRunning(folder, command);
     const item = new vscode.TreeItem(command.label);
     item.id = `command:${commandKey(folder, command)}`;
-    item.description = running ? 'en cours' : command.detail ?? command.source;
+    item.description = running ? 'en cours' : command.source;
     item.tooltip = running
       ? `${command.command}\nEn cours — utilisez Relancer ou Stop`
-      : `${command.command}\nCliquer pour lancer`;
+      : [command.command, command.detail, 'Cliquer pour lancer'].filter(Boolean).join('\n');
     item.iconPath = new vscode.ThemeIcon(running ? 'sync~spin' : 'play');
     item.contextValue = running ? 'cockpit.command.running' : 'cockpit.command.idle';
     if (!running) {

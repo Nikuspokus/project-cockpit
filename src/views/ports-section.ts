@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import type { ListeningPort } from '../platform/types';
+import { isEditorProcess } from '../ports/group';
 import type { PortsService } from '../ports/service';
 import type { PortNode, Section, TreeNode } from './nodes';
 
@@ -63,7 +64,7 @@ export class PortsSection implements Section {
 
   private portNode(port: ListeningPort, declared = this.service.snapshot.declared.has(port.port)): PortNode {
     // Seuls les processus d'autres utilisateurs sont en lecture seule.
-    const killable = !this.service.snapshot.groups.foreign.includes(port);
+    const killable = !this.service.snapshot.groups.foreign.includes(port) && !isEditorProcess(port.processName);
     return { kind: 'port', section: 'ports', port, declared, killable };
   }
 
@@ -82,7 +83,11 @@ export class PortsSection implements Section {
       port.user ? `Utilisateur : ${port.user}` : undefined,
       port.cwd ? `Dossier : ${port.cwd}` : undefined,
       declared ? 'Déclaré dans un fichier .env du projet' : undefined,
-      killable ? undefined : 'Lecture seule : ce processus appartient à un autre utilisateur',
+      killable
+        ? undefined
+        : isEditorProcess(port.processName)
+          ? "Lecture seule : processus de l'éditeur"
+          : 'Lecture seule : ce processus appartient à un autre utilisateur',
     ]
       .filter(Boolean)
       .join('\n');

@@ -38,6 +38,16 @@ export function detectPackageManager(
   return 'npm';
 }
 
+// Hooks du cycle de vie npm, exécutés automatiquement : inutile de les lancer à la main.
+const LIFECYCLE = new Set(['preinstall', 'postinstall', 'prepare', 'prepublish', 'prepublishOnly', 'prepack', 'postpack']);
+
+/** « prebuild »/« postbuild » sont des hooks de « build » seulement si le script « build » existe. */
+function isHook(name: string, names: ReadonlySet<string>): boolean {
+  if (LIFECYCLE.has(name)) return true;
+  const base = name.startsWith('pre') ? name.slice(3) : name.startsWith('post') ? name.slice(4) : '';
+  return base !== '' && names.has(base);
+}
+
 /** Liste les scripts de package.json sous la forme « <gestionnaire> run <script> ». */
 export function detectNpmScripts(packageJson: string, manager: PackageManager): DetectedCommand[] {
   let scripts: unknown;
@@ -48,9 +58,11 @@ export function detectNpmScripts(packageJson: string, manager: PackageManager): 
   }
   if (!scripts || typeof scripts !== 'object') return [];
 
+  const entries = Object.entries(scripts as Record<string, unknown>);
+  const names = new Set(entries.map(([name]) => name));
   const commands: DetectedCommand[] = [];
-  for (const [name, body] of Object.entries(scripts as Record<string, unknown>)) {
-    if (typeof body !== 'string' || !SAFE_SCRIPT_NAME.test(name)) continue;
+  for (const [name, body] of entries) {
+    if (typeof body !== 'string' || !SAFE_SCRIPT_NAME.test(name) || isHook(name, names)) continue;
     commands.push({ label: name, command: `${manager} run ${name}`, source: manager, detail: body });
   }
   return commands;

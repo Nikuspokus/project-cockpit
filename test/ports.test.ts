@@ -5,7 +5,7 @@ import { parseLsofCwd, parseLsofListening, splitAddress } from '../src/platform/
 import { parseNetstat, parseTasklist } from '../src/platform/parse-netstat';
 import type { ListeningPort } from '../src/platform/types';
 import { extractDeclaredPorts } from '../src/ports/declared';
-import { groupPorts, isInside } from '../src/ports/group';
+import { groupPorts, isEditorProcess, isInside, portsOfPid } from '../src/ports/group';
 
 const fx = (name: string): string => readFileSync(join(process.cwd(), 'test/fixtures/platform', name), 'utf8');
 
@@ -125,5 +125,24 @@ describe('isInside', () => {
     expect(isInside('/a/b', '/a/b')).toBe(true);
     expect(isInside('/a/bc', '/a/b')).toBe(false);
     expect(isInside('/x', '/a/b')).toBe(false);
+  });
+});
+
+describe("processus de l'éditeur et ports d'un même PID", () => {
+  const mk = (pid: number, port: number, processName: string, cwd = '/w/app'): ListeningPort => ({ pid, port, processName, address: '*', user: 'nico', cwd });
+
+  it("reconnaît les helpers d'éditeur", () => {
+    for (const n of ['Code Helper (Plugin)', 'Cursor Helper', 'Electron', 'Code.exe']) expect(isEditorProcess(n)).toBe(true);
+    for (const n of ['node', 'codex', 'java']) expect(isEditorProcess(n)).toBe(false);
+  });
+
+  it("range un helper d'éditeur dans « autres » même lancé dans le workspace", () => {
+    const g = groupPorts([mk(1, 3000, 'node'), mk(2, 61512, 'Code Helper (Plugin)')], { declared: new Set(), workspaceDirs: ['/w/app'], username: 'nico' });
+    expect(g.project.map((p) => p.port)).toEqual([3000]);
+    expect(g.others.map((p) => p.port)).toEqual([61512]);
+  });
+
+  it("liste les ports d'un PID triés", () => {
+    expect(portsOfPid([mk(1, 8089, 'node'), mk(1, 3000, 'node'), mk(2, 5432, 'pg'), mk(1, 3000, 'node')], 1)).toEqual([3000, 8089]);
   });
 });

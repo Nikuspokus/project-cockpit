@@ -79,7 +79,7 @@ describe('scanWorkspace — monorepo réel (fixtures)', () => {
 describe('scanWorkspace — dossiers ignorés (système de fichiers en mémoire)', () => {
   const fs = memoryFs({
     '/ws/package.json': pkg('dev'),
-    '/ws/node_modules/lib/package.json': pkg('postinstall'),
+    '/ws/node_modules/lib/package.json': pkg('lint'),
     '/ws/dist/package.json': pkg('built'),
     '/ws/target/pom.xml': '<project></project>',
     '/ws/build/Makefile': 'all:\n',

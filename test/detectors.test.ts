@@ -135,3 +135,11 @@ describe('detectCompose', () => {
     expect(detectCompose('version: "3"\n')).toEqual([]);
   });
 });
+
+describe('scripts npm : hooks masqués', () => {
+  it('masque pre/post des scripts existants et le cycle de vie, garde preview', () => {
+    const pkg = JSON.stringify({ scripts: { build: 'tsc', prebuild: 'rm -rf dist', postbuild: 'x', prepare: 'husky', preview: 'vite preview', predeploy: 'x' } });
+    const labels = detectNpmScripts(pkg, 'npm').map((c) => c.label);
+    expect(labels).toEqual(['build', 'preview', 'predeploy']);
+  });
+});
