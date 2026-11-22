@@ -1,6 +1,7 @@
 # Project Cockpit
 
 [![Télécharger le .vsix](https://img.shields.io/badge/T%C3%A9l%C3%A9charger-.vsix-38bdf8)](https://nikuspokus.github.io/project-cockpit/project-cockpit-latest.vsix)
+[![Site](https://img.shields.io/badge/Site-GitHub%20Pages-0f172a)](https://nikuspokus.github.io/project-cockpit/)
 [![Dernière release](https://img.shields.io/github/v/release/Nikuspokus/project-cockpit)](https://github.com/Nikuspokus/project-cockpit/releases/latest)
 
 **Un seul panneau, zéro configuration** : lancez les commandes de votre projet, gérez les ports occupés et vérifiez votre `.env`.
