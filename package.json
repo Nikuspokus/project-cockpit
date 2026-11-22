@@ -4,6 +4,7 @@
   "description": "Un seul panneau, zéro configuration : lancez les commandes du projet, gérez les ports occupés et vérifiez votre .env (JS/TS et Java).",
   "version": "0.1.0",
   "publisher": "nikuspokus",
+  "icon": "media/icon.png",
   "license": "SEE LICENSE IN LICENSE",
   "engines": {
     "vscode": "^1.90.0"
