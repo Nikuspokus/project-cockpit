@@ -1,8 +1,15 @@
 # Project Cockpit
 
-[![Télécharger le .vsix](https://img.shields.io/badge/T%C3%A9l%C3%A9charger-.vsix-38bdf8)](https://nikuspokus.github.io/project-cockpit/project-cockpit-latest.vsix)
-[![Site](https://img.shields.io/badge/Site-GitHub%20Pages-0f172a)](https://nikuspokus.github.io/project-cockpit/)
-[![Dernière release](https://img.shields.io/github/v/release/Nikuspokus/project-cockpit)](https://github.com/Nikuspokus/project-cockpit/releases/latest)
+<p align="center">
+  <a href="https://nikuspokus.github.io/project-cockpit/">
+    <img src="https://img.shields.io/badge/%F0%9F%9A%80%20OUVRIR%20LE%20SITE%20%E2%80%94%20T%C3%89L%C3%89CHARGER-38bdf8?style=for-the-badge&labelColor=0f172a" alt="Ouvrir le site et télécharger Project Cockpit" height="56">
+  </a>
+</p>
+
+<p align="center">
+  <a href="https://nikuspokus.github.io/project-cockpit/project-cockpit-latest.vsix"><img src="https://img.shields.io/badge/T%C3%A9l%C3%A9charger-.vsix-38bdf8" alt="Télécharger le .vsix"></a>
+  <a href="https://github.com/Nikuspokus/project-cockpit/releases/latest"><img src="https://img.shields.io/github/v/release/Nikuspokus/project-cockpit" alt="Dernière release"></a>
+</p>
 
 **Un seul panneau, zéro configuration** : lancez les commandes de votre projet, gérez les ports occupés et vérifiez votre `.env`.
 Pensé pour les devs **JS/TS** (Vue, Nuxt, Svelte, Angular, NestJS) et **Java** (Maven, Gradle, Spring), dans VS Code et ses dérivés (Cursor, Windsurf, VSCodium).
